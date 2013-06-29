@@ -1,0 +1,9 @@
+<script type="text/javascript">
+/* <![CDATA[ */
+document.addEvent('domready', function() {
+	new Autocompleter.Request.JSON('<?php echo $this->strFormId; ?>',
+		'SimpleAjax.php?mode=ac&acid=<?php echo $this->strFormId . $this->strUrlAdditional; ?>',
+		<?php echo $this->config; ?>);
+});
+/* ]]> */
+</script>

@@ -15,13 +15,13 @@ var Autocompleter = new Class({
 	Implements: [Options, Events],
 
 	options: {/*
-		onOver: $empty,
-		onSelect: $empty,
-		onSelection: $empty,
-		onShow: $empty,
-		onHide: $empty,
-		onBlur: $empty,
-		onFocus: $empty,*/
+	 onOver: $empty,
+	 onSelect: $empty,
+	 onSelection: $empty,
+	 onShow: $empty,
+	 onHide: $empty,
+	 onBlur: $empty,
+	 onFocus: $empty,*/
 		minLength: 1,
 		markQuery: true,
 		width: 'inherit',
@@ -48,7 +48,7 @@ var Autocompleter = new Class({
 		choicesMatch: null,
 
 		multiple: false,
-		separator: ' ',
+		separator: ', ',
 		separatorSplit: /\s*[,;]\s*/,
 		autoTrim: false,
 		allowDupes: false,
@@ -61,7 +61,7 @@ var Autocompleter = new Class({
 		this.element = $(element);
 		this.setOptions(options);
 		this.build();
-		this.observer = new Observer(this.element, this.prefetch.bind(this), $merge({
+		this.observer = new Observer(this.element, this.prefetch.bind(this), Object.merge({
 			'delay': this.options.delay
 		}, this.options.observerOptions));
 		this.queryValue = null;
@@ -98,16 +98,16 @@ var Autocompleter = new Class({
 		if (!this.options.separator.test(this.options.separatorSplit)) {
 			this.options.separatorSplit = this.options.separator;
 		}
-		this.fx = (!this.options.fxOptions) ? null : new Fx.Tween(this.choices, $merge({
+		this.fx = (!this.options.fxOptions) ? null : new Fx.Tween(this.choices, Object.merge({
 			'property': 'opacity',
 			'link': 'cancel',
 			'duration': 200
 		}, this.options.fxOptions)).addEvent('onStart', Chain.prototype.clearChain).set(0);
 		this.element.setProperty('autocomplete', 'off')
-			.addEvent((Browser.Engine.trident || Browser.Engine.webkit) ? 'keydown' : 'keypress', this.onCommand.bind(this))
-			.addEvent('click', this.onCommand.bind(this, [false]))
-			.addEvent('focus', this.toggleFocus.create({bind: this, arguments: true, delay: 100}))
-			.addEvent('blur', this.toggleFocus.create({bind: this, arguments: false, delay: 100}));
+			.addEvent((Browser.ie || Browser.safari || Browser.chrome) ? 'keydown' : 'keypress', this.onCommand.bind(this))
+			.addEvent('click', this.onCommand.bind(this, false))
+			.addEvent('focus', this.toggleFocus.bind(this, true))
+			.addEvent('blur', this.toggleFocus.bind(this, false));
 	},
 
 	destroy: function() {
@@ -133,16 +133,16 @@ var Autocompleter = new Class({
 					}
 					break;
 				case 'up': case 'down':
-					if (!this.prefetch() && this.queryValue !== null) {
-						var up = (e.key == 'up');
-						this.choiceOver((this.selected || this.choices)[
-							(this.selected) ? ((up) ? 'getPrevious' : 'getNext') : ((up) ? 'getLast' : 'getFirst')
+				if (!this.prefetch() && this.queryValue !== null) {
+					var up = (e.key == 'up');
+					this.choiceOver((this.selected || this.choices)[
+						(this.selected) ? ((up) ? 'getPrevious' : 'getNext') : ((up) ? 'getLast' : 'getFirst')
 						](this.options.choicesMatch), true);
-					}
-					return false;
+				}
+				return false;
 				case 'esc': case 'tab':
-					this.hideChoices(true);
-					break;
+				this.hideChoices(true);
+				break;
 			}
 		}
 		return true;
@@ -208,8 +208,8 @@ var Autocompleter = new Class({
 		this.fix.show();
 		if (this.options.visibleChoices) {
 			var scroll = document.getScroll(),
-			size = document.getSize(),
-			coords = this.choices.getCoordinates();
+				size = document.getSize(),
+				coords = this.choices.getCoordinates();
 			if (coords.right > scroll.x + size.x) scroll.x = coords.right - size.x;
 			if (coords.bottom > scroll.y + size.y) scroll.y = coords.bottom - size.y;
 			window.scrollTo(Math.min(scroll.x, coords.left), Math.min(scroll.y, coords.top));
@@ -221,7 +221,7 @@ var Autocompleter = new Class({
 			var value = this.element.value;
 			if (this.options.forceSelect) value = this.opted;
 			if (this.options.autoTrim) {
-				value = value.split(this.options.separatorSplit).filter($arguments(0)).join(this.options.separator);
+				value = value.split(this.options.separatorSplit).filter(arguments[0]).join(this.options.separator);
 			}
 			this.observer.setValue(value);
 		}
@@ -278,7 +278,7 @@ var Autocompleter = new Class({
 	update: function(tokens) {
 		this.choices.empty();
 		this.cached = tokens;
-		var type = tokens && $type(tokens);
+		var type = tokens && typeOf(tokens);
 		if (!type || (type == 'array' && !tokens.length) || (type == 'hash' && !tokens.getLength())) {
 			(this.options.emptyChoices || this.hideChoices).call(this);
 		} else {
@@ -332,6 +332,8 @@ var Autocompleter = new Class({
 	 * @return		{String} Text
 	 */
 	markQueryValue: function(str) {
+		if (!str) return; // if str is null
+
 		return (!this.options.markQuery || !this.queryValue) ? str
 			: str.replace(new RegExp('(' + ((this.options.filterSubset) ? '' : '^') + this.queryValue.escapeRegExp() + ')', (this.options.filterCase) ? '' : 'i'), '<span class="autocompleter-queried">$1</span>');
 	},
@@ -346,8 +348,8 @@ var Autocompleter = new Class({
 	 */
 	addChoiceEvents: function(el) {
 		return el.addEvents({
-			'mouseover': this.choiceOver.bind(this, [el]),
-			'click': this.choiceSelect.bind(this, [el])
+			'mouseover': this.choiceOver.bind(this, el),
+			'click': this.choiceSelect.bind(this, el)
 		});
 	}
 });
@@ -355,7 +357,7 @@ var Autocompleter = new Class({
 var OverlayFix = new Class({
 
 	initialize: function(el) {
-		if (Browser.Engine.trident) {
+		if (Browser.ie) {
 			this.element = $(el);
 			this.relative = this.element.getOffsetParent();
 			this.fix = new Element('iframe', {
@@ -377,7 +379,7 @@ var OverlayFix = new Class({
 			var coords = this.element.getCoordinates(this.relative);
 			delete coords.right;
 			delete coords.bottom;
-			this.fix.setStyles($extend(coords, {
+			this.fix.setStyles(Object.append(coords, {
 				'display': '',
 				'zIndex': (this.element.getStyle('zIndex') || 1) - 1
 			}));
@@ -399,7 +401,7 @@ var OverlayFix = new Class({
 Element.implement({
 
 	getSelectedRange: function() {
-		if (!Browser.Engine.trident) return {start: this.selectionStart, end: this.selectionEnd};
+		if (!Browser.ie) return {start: this.selectionStart, end: this.selectionEnd};
 		var pos = {start: 0, end: 0};
 		var range = this.getDocument().selection.createRange();
 		if (!range || range.parentElement() != this) return pos;
@@ -420,7 +422,7 @@ Element.implement({
 	},
 
 	selectRange: function(start, end) {
-		if (Browser.Engine.trident) {
+		if (Browser.ie) {
 			var diff = this.value.substr(start, end - start).replace(/\r/g, '').length;
 			start = this.value.substr(0, start).replace(/\r/g, '').length;
 			var range = this.createTextRange();
@@ -440,10 +442,6 @@ Element.implement({
 /* compatibility */
 
 Autocompleter.Base = Autocompleter;
-
-
-
-
 
 /**
  * Autocompleter.Local
@@ -479,8 +477,6 @@ Autocompleter.Local = new Class({
 
 
 
-
-
 /**
  * Autocompleter.Request
  *
@@ -498,10 +494,10 @@ Autocompleter.Request = new Class({
 	Extends: Autocompleter,
 
 	options: {/*
-		indicator: null,
-		indicatorClass: null,
-		onRequest: $empty,
-		onComplete: $empty,*/
+	 indicator: null,
+	 indicatorClass: null,
+	 onRequest: $empty,
+	 onComplete: $empty,*/
 		postData: {},
 		ajaxOptions: {},
 		postVar: 'value'
@@ -509,7 +505,7 @@ Autocompleter.Request = new Class({
 	},
 
 	query: function(){
-		var data = $unlink(this.options.postData) || {};
+		var data = Object.clone(this.options.postData) || {};
 		data[this.options.postVar] = this.queryValue;
 		var indicator = $(this.options.indicator);
 		if (indicator) indicator.setStyle('display', '');
@@ -540,7 +536,7 @@ Autocompleter.Request.JSON = new Class({
 
 	initialize: function(el, url, options) {
 		this.parent(el, options);
-		this.request = new Request.JSON($merge({
+		this.request = new Request.JSON(Object.merge({
 			'url': url,
 			'link': 'cancel'
 		}, this.options.ajaxOptions)).addEvent('onComplete', this.queryResponse.bind(this));
@@ -559,7 +555,7 @@ Autocompleter.Request.HTML = new Class({
 
 	initialize: function(el, url, options) {
 		this.parent(el, options);
-		this.request = new Request.HTML($merge({
+		this.request = new Request.HTML(Object.merge({
 			'url': url,
 			'link': 'cancel',
 			'update': this.choices
@@ -590,9 +586,6 @@ Autocompleter.Ajax = {
 	Json: Autocompleter.Request.JSON,
 	Xhtml: Autocompleter.Request.HTML
 };
-
-
-
 
 
 /**
@@ -642,12 +635,12 @@ var Observer = new Class({
 	},
 
 	clear: function() {
-		$clear(this.timeout || null);
+		clearTimeout(this.timeout || null);
 		return this;
 	},
 
 	pause: function(){
-		if (this.timer) $clear(this.timer);
+		if (this.timer) clearInterval(this.timer);
 		else this.element.removeEvent('keyup', this.bound);
 		return this.clear();
 	},

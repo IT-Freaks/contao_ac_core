@@ -1,0 +1,20 @@
+<script>
+(function($) {
+	$(function() {
+		$( "#<?php echo $this->strFormId; ?>" ).autocomplete($.extend({
+			source: function(request, response) {
+				$.ajax({
+					'data': {
+						'value': request.term
+					},
+					'url': 'SimpleAjax.php?mode=ac&acid=<?php echo $this->strFormId; ?>',
+					'type': 'POST'
+				})
+				.done(function(data) {
+					response(data);
+				});
+			}
+		}, <?php echo $this->config; ?> ));
+	});
+})(jQuery);
+</script>
